@@ -7,12 +7,6 @@ const enumerateErrorFormat = winston.format((info) => {
   return info;
 });
 
-const formatter = ({ level, message }: { level: string; message: string }) => {
-  const now = new Date();
-
-  return `[${now.getHours()}:${now.getMinutes()}:${now.getSeconds()}] [${level}] ${message}`;
-};
-
 export const logger = winston.createLogger({
   format: winston.format.combine(
     enumerateErrorFormat(),
@@ -20,7 +14,10 @@ export const logger = winston.createLogger({
       ? winston.format.colorize()
       : winston.format.uncolorize(),
     winston.format.splat(),
-    winston.format.printf(formatter)
+    winston.format.printf(({ level, message }) => {
+      const now = new Date();
+      return `[${now.getHours()}:${now.getMinutes()}:${now.getSeconds()}] [${level}] ${message}`;
+    })
   ),
   transports: [
     new winston.transports.Console({

@@ -1,4 +1,4 @@
-import fastify, {
+import Fastify, {
   FastifyRegister,
   FastifyReply,
   FastifyRequest,
@@ -11,7 +11,9 @@ import { defaultErrorHandler } from "../../utils/errorHandler";
 import { loadConfigs } from "./config-utils";
 
 const BuildFastifyApplication = (app: Parameters<FastifyRegister>[0]) => {
-  const fastifyApplication = fastify();
+  const fastifyApplication = Fastify({
+    logger: true,
+  });
 
   // Logging requests
   fastifyApplication.addHook("onResponse", logRequest);
@@ -59,7 +61,7 @@ const logRequest = (
       status: reply.statusCode,
       userAgent: req.headers["user-agent"],
       referer: req.headers.referer ?? "",
-      latency: reply.getResponseTime() / 1000 + "s",
+      latency: reply.elapsedTime / 1000 + "s",
       protocol: req.protocol,
     },
   };

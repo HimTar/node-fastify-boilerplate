@@ -1,5 +1,5 @@
 import dotenv from "dotenv";
-import { logger } from "../framework";
+import { logger } from ".";
 
 export const loadConfigs = () => {
   logger.info("Loading Env Variables");

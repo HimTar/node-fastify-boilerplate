@@ -1,8 +1,11 @@
-import { FastifyPluginCallback } from "fastify";
+import { FastifyPluginCallback, FastifyPluginOptions } from "fastify";
 import fp from "fastify-plugin";
 import { generateEmailService } from "../../nodemailer";
 
-const plugin: FastifyPluginCallback<never> = async (fastify, _options) => {
+const plugin: FastifyPluginCallback<FastifyPluginOptions> = async (
+  fastify,
+  _options
+) => {
   const user = process.env.EMAIL_USER!;
   const pass = process.env.EMAIL_PASSWORD!;
 

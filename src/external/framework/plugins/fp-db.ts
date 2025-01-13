@@ -1,11 +1,14 @@
 import { FastifyPluginCallback, FastifyPluginOptions } from "fastify";
 import fp from "fastify-plugin";
+import { makeDatabaseConnection } from "../../db";
 
 const plugin: FastifyPluginCallback<FastifyPluginOptions> = async (
   fastify,
   _options
 ) => {
-  fastify.decorate("Config", process.env);
+  const conn = await makeDatabaseConnection();
+
+  fastify.decorate("DB", conn);
 };
 
-export default fp(plugin, { name: "fp-config" });
+export default fp(plugin, { name: "fp-db", dependencies: ["fp-config"] });
