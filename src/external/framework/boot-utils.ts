@@ -11,9 +11,7 @@ import { defaultErrorHandler } from "../../utils/errorHandler";
 import { loadConfigs } from "./config-utils";
 
 const BuildFastifyApplication = (app: Parameters<FastifyRegister>[0]) => {
-  const fastifyApplication = Fastify({
-    logger: true,
-  });
+  const fastifyApplication = Fastify();
 
   // Logging requests
   fastifyApplication.addHook("onResponse", logRequest);
@@ -24,6 +22,11 @@ const BuildFastifyApplication = (app: Parameters<FastifyRegister>[0]) => {
 
   // Attach default Error handler
   fastifyApplication.setErrorHandler(defaultErrorHandler);
+
+  // add health check
+  fastifyApplication.get("/health", async (request, reply) => {
+    return { status: "UP" };
+  });
 
   return fastifyApplication;
 };

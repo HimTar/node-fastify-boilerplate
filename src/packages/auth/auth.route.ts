@@ -3,12 +3,14 @@ import { FromSchema } from "json-schema-to-ts";
 import { BadRequest } from "http-errors";
 
 import UserModel from "./repository";
-import { Login } from "./schema";
+import { Login, Register } from "./schema";
 import { queryBrandById } from "../brand/utils";
+import { randomUUID } from "../../external/uuid";
+import { queryBrandByEmailDomain } from "../brand/library";
 
 const routes: FastifyPluginAsync = async function (app) {
   app.post<{ Body: FromSchema<typeof Login> }>(
-    "/auth/login",
+    "/auth/brand/login",
     {
       schema: {
         body: Login,
@@ -24,12 +26,12 @@ const routes: FastifyPluginAsync = async function (app) {
         throw new BadRequest("Invalid email");
       }
 
-      if (!this.Encrypt.compareData(password, user.password)) {
+      if (!(await this.Encrypt.compareData(password, user.password))) {
         throw new BadRequest("Invalid password");
       }
 
       // Create token
-      const token = this.Encrypt.encryptToken({
+      const token = await this.Encrypt.encryptToken({
         email,
         brandId: user.brandId ?? "",
       });
@@ -47,65 +49,46 @@ const routes: FastifyPluginAsync = async function (app) {
     }
   );
 
-  // app.post<{ Body: FromSchema<typeof Register> }>(
-  //   "/auth/register",
-  //   {
-  //     schema: {
-  //       body: Register,
-  //     },
-  //   },
-  //   async function (req, reply) {
-  //     const now = new Date();
-  //     const { email, password, username } = req.body;
+  app.post<{ Body: FromSchema<typeof Register> }>(
+    "/auth/brand/register",
+    {
+      schema: {
+        body: Register,
+      },
+    },
+    async function (req, reply) {
+      const now = new Date();
+      const { name, email, password } = req.body;
 
-  //     // validate credentials
-  //     const existingUser = await queryUser(this.Mongo, { email, active: true });
+      // validate credentials
+      const [existingUser] = await UserModel.query("email").eq(email).exec();
 
-  //     if (existingUser) {
-  //       throw new BadRequest("Account with email already exists");
-  //     }
+      if (existingUser) {
+        throw new BadRequest("Account with email already exists");
+      }
 
-  //     // Create user
-  //     const encryptedPassword = await this.Encrypt.encrypt(password);
-  //     const newUser = await createUser(this.Mongo, {
-  //       email,
-  //       password: encryptedPassword,
-  //       username,
-  //       active: true,
-  //       isEmailVerified: false,
-  //       createdAt: now,
-  //       updatedAt: now,
-  //     });
-  //     const newUserId = newUser.insertedId;
+      // fetch brand info
+      const brandInfo = await queryBrandByEmailDomain(email.split("@")[1]);
 
-  //     // Close existing account verification requests
-  //     await closeAccountVerification(this.Mongo, {
-  //       userId: newUserId,
-  //       active: true,
-  //     });
+      if (!brandInfo) {
+        throw new BadRequest("Email domain is not registered");
+      }
 
-  //     // send email verification mail
-  //     const verificationToken = randomUUID();
+      // Create user
+      const encryptedPassword = await this.Encrypt.encrypt(password);
 
-  //     await createAccountVerification(this.Mongo, {
-  //       userId: newUserId,
-  //       token: verificationToken,
-  //       type: "EMAIL",
-  //       otp: "",
-  //       createdAt: now,
-  //       expireAt: getNextDay(now),
-  //       active: true,
-  //     });
+      const newUser = new UserModel({
+        id: randomUUID(),
+        name,
+        email,
+        brandId: brandInfo.id,
+        password: encryptedPassword,
+      });
+      await newUser.save();
 
-  //     await this.Email.sendEmail({
-  //       to: email,
-  //       subject: "Email Verification Required",
-  //       html: generateEmailVerificationMail(username, verificationToken),
-  //     });
-
-  //     return reply.send("OK");
-  //   }
-  // );
+      return reply.send("OK");
+    }
+  );
 
   // app.get<{ Params: { token: string } }>(
   //   "/auth/verify/email/:token",

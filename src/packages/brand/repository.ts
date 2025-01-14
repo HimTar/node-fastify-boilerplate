@@ -11,6 +11,16 @@ const BrandSchema = new Schema(
     name: {
       type: String,
       required: true,
+      index: {
+        name: "name-index",
+        type: "global",
+      },
+    },
+    emailDomains: {
+      type: Array,
+      schema: [String],
+      default: [],
+      required: true,
     },
     deactivatedAt: {
       type: Date,

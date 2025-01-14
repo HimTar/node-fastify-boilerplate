@@ -5,7 +5,7 @@ const UserSchema = new Schema(
   {
     id: {
       type: String,
-      hashKey: true,
+      hashKey: true, // Primary key
       required: true,
     },
     name: {
@@ -15,6 +15,10 @@ const UserSchema = new Schema(
     email: {
       type: String,
       required: true,
+      index: {
+        name: "EmailIndex",
+        type: "global",
+      },
     },
     password: {
       type: String,
@@ -31,10 +35,11 @@ const UserSchema = new Schema(
     },
   },
   {
-    timestamps: true,
+    timestamps: true, // Adds createdAt and updatedAt fields automatically
   }
 );
 
-const UserModel = model<UserRow>("User", UserSchema);
+// Export the model
+export const UserModel = model<UserRow>("User", UserSchema);
 
 export default UserModel;
